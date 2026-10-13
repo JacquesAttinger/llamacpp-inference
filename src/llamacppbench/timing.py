@@ -1,18 +1,18 @@
-# Last edited: 2026-10-11 12:00
+# Last edited: 2026-10-13 10:05
 """Time prefill (time to first token) and decode separately."""
 
 import statistics
 from dataclasses import dataclass
 
-from mlx_lm import stream_generate
+import llama_cpp
 
-from mlxbench.memory import peak_gb, reset_peak
+from llamacppbench.memory import peak_gb, reset_peak
 
 
 @dataclass
 class TimingResult:
-    # MLX-lm gets this value by counting the number of tokens in the prompt
-    # and dividing it by the time it took to ingest them.
+    # llama.cpp counts the prompt tokens it processed and the milliseconds that took,
+    # and we divide one by the other.
     prefill_tps: float
     decode_tps: float  # tokens per second generated during decode step
     time_to_first_token_s: float  # time of first token generated - time of ingestion of the prompt
@@ -27,13 +27,22 @@ def summarize(runs: list[TimingResult]) -> TimingResult:
 
 
 def time_once(model, tokenizer, prompt_tokens: list[int], max_tokens: int) -> TimingResult:
-    """One generation; prefill and decode speeds come from mlx-lm's own counters."""
+    """One generation; prefill and decode speeds come from llama.cpp's own timers."""
+    model.reset()  # forget the old KV cache, or llama-cpp-python reuses it and skips the prefill
     reset_peak()
-    last = None
-    for last in stream_generate(model, tokenizer, prompt_tokens, max_tokens=max_tokens):
-        pass
-    ttft = len(prompt_tokens) / last.prompt_tps
-    return TimingResult(last.prompt_tps, last.generation_tps, ttft, peak_gb())
+    llama_cpp.llama_perf_context_reset(model.ctx)
+    # generate() is lazy: it does no work until we ask it for a token with next().
+    # The first next() runs the prefill and returns token 1. Each later next() runs one decode step.
+    # temp=0.0 is greedy, so every run does the same work.
+    token_stream = model.generate(prompt_tokens, temp=0.0)
+    for _ in range(max_tokens):  # Generate the tokens one at a time
+        if next(token_stream, None) is None:  # the stream ended early, so there is nothing left to time
+            break
+    perf = llama_cpp.llama_perf_context(model.ctx)
+    prefill_tps = perf.n_p_eval / (perf.t_p_eval_ms / 1000)
+    decode_tps = perf.n_eval / (perf.t_eval_ms / 1000)
+    ttft = len(prompt_tokens) / prefill_tps
+    return TimingResult(prefill_tps, decode_tps, ttft, peak_gb())
 
 
 def time_generation(

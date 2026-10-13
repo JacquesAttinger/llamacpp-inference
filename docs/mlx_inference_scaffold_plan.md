@@ -1,3 +1,7 @@
+<!-- Last edited: 2026-10-13 11:25 -->
+> **Historical.** This is the original MLX design.
+> The project now runs on llama.cpp. See `llama_cpp_conversion_plan.md`.
+
 # Plan: scaffold `~/code/mlx-inference`
 
 Plan date: 2026-10-11.

@@ -1,9 +1,9 @@
 # Last edited: 2026-10-11 12:00
 import math
 
-from mlxbench.perplexity import chunk_tokens, perplexity_from_nll
-from mlxbench.results import BenchRecord, load_records, save_records
-from mlxbench.timing import TimingResult, summarize
+from llamacppbench.perplexity import chunk_tokens, perplexity_from_nll
+from llamacppbench.results import BenchRecord, load_records, save_records
+from llamacppbench.timing import TimingResult, summarize
 
 
 def test_perplexity_uniform():

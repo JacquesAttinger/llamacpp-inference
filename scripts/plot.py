@@ -6,7 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from mlxbench.results import load_records
+from llamacppbench.results import load_records
 
 
 def main() -> None:
