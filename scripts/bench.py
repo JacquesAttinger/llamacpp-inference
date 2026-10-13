@@ -10,7 +10,7 @@ from llamacppbench.perplexity import wikitext2_perplexity
 from llamacppbench.results import BenchRecord, save_records
 from llamacppbench.timing import time_generation
 
-CONTEXTS = [128, 1024, 4096, 16384]
+CONTEXTS = [128, 1024, 4096, 16384]  #
 BATCHES = [1, 2, 4, 8]
 BATCH_MAX_CONTEXT = 1024  # 8 x 16k KV cache would not fit in 24 GB
 PPL_CHUNK = 1024  # tokens per perplexity chunk, which is also the n_ctx of the perplexity model
@@ -18,6 +18,9 @@ MAX_NEW_TOKENS = 128  # what timing.time_generation generates by default
 
 
 def make_prompt(tokenizer, n: int) -> list[int]:
+    """
+    Make a prompt of n tokens, so we can see how input size changes the results.
+    """
     ids = tokenizer.encode("The quick brown fox jumps over the lazy dog. ")
     return (ids * (n // len(ids) + 1))[:n]
 
@@ -35,9 +38,11 @@ def run_model(model_path: str, contexts: list[int], batches: list[int], ppl: boo
     perplexity = measure_perplexity(model_path) if ppl else None
     model, tok = load_model(model_path, n_ctx=max(contexts) + MAX_NEW_TOKENS)
     records = []
-    for ctx in contexts:
+
+    for ctx in contexts:  # We loop over the different prompt sizes
         prompt = make_prompt(tok, ctx)
-        for b in batches:
+
+        for b in batches:  # We loop over the different batch sizes
             if b > 1 and ctx > BATCH_MAX_CONTEXT:
                 continue
             t = time_generation(model, tok, prompt) if b == 1 else time_batch(model, tok, prompt, b)
@@ -54,7 +59,7 @@ def run_model(model_path: str, contexts: list[int], batches: list[int], ppl: boo
                 )
             )
             print(records[-1])
-    model.close()
+    model.close()  # Cleans up memory that was used during the model run
     return records
 
 
