@@ -1,0 +1,39 @@
+# Last edited: 2026-10-13 10:40
+"""Load a GGUF model with llama.cpp (through llama-cpp-python)."""
+
+from llama_cpp import Llama
+
+# Written by scripts/quantize.sh. Relative to the repo root.
+DEFAULT_MODEL = "models/llama-3.1-8b-f16.gguf"
+
+
+class Tokenizer:
+    """Gives the model's built-in llama.cpp tokenizer the `.encode(text)` shape the rest of the code uses."""
+
+    def __init__(self, llm: Llama):
+        self._llm = llm
+
+    def encode(self, text: str) -> list[int]:
+        # add_bos=True matches what the Hugging Face tokenizer did for Llama 3.
+        return self._llm.tokenize(text.encode(), add_bos=True)
+
+
+def load_model(
+    path: str = DEFAULT_MODEL, n_ctx: int = 2048, logits_all: bool = False
+) -> tuple[Llama, Tokenizer]:
+    """Return (model, tokenizer) for a GGUF file.
+
+    n_ctx is the KV cache size in tokens. A bigger value uses more memory, so size it for the run.
+    logits_all keeps the scores for every position (perplexity needs them) and costs n_ctx * vocab * 4 bytes.
+    """
+    model = Llama(
+        model_path=path,
+        n_gpu_layers=-1,  # -1 puts every layer on the GPU (Metal)
+        n_ctx=n_ctx,
+        n_batch=2048,  # tokens fed to the model per prefill step (llama.cpp's own default)
+        n_ubatch=512,  # the physical chunk inside one prefill step (llama.cpp's own default)
+        flash_attn=True,  # smaller scratch memory for long contexts
+        logits_all=logits_all,
+        verbose=False,
+    )
+    return model, Tokenizer(model)
