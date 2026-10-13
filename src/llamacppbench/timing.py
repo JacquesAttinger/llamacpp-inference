@@ -29,7 +29,7 @@ def summarize(runs: list[TimingResult]) -> TimingResult:
 def time_once(model, tokenizer, prompt_tokens: list[int], max_tokens: int) -> TimingResult:
     """One generation; prefill and decode speeds come from llama.cpp's own timers."""
     model.reset()  # forget the old KV cache, or llama-cpp-python reuses it and skips the prefill
-    reset_peak()
+    reset_peak()  # Starts the polling for memory
     llama_cpp.llama_perf_context_reset(model.ctx)
     # generate() is lazy: it does no work until we ask it for a token with next().
     # The first next() runs the prefill and returns token 1. Each later next() runs one decode step.

@@ -1,4 +1,4 @@
-# Last edited: 2026-10-13 10:40
+# Last edited: 2026-10-13 10:58
 """Load a GGUF model with llama.cpp (through llama-cpp-python)."""
 
 from llama_cpp import Llama
@@ -33,6 +33,9 @@ def load_model(
         n_batch=2048,  # tokens fed to the model per prefill step (llama.cpp's own default)
         n_ubatch=512,  # the physical chunk inside one prefill step (llama.cpp's own default)
         flash_attn=True,  # smaller scratch memory for long contexts
+        # False copies the weights into the process's own memory. With mmap, macOS may keep only some weight
+        # pages counted as ours, so the peak-memory readings jump around by several GB between runs.
+        use_mmap=False,
         logits_all=logits_all,
         verbose=False,
     )

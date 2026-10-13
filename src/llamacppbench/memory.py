@@ -1,23 +1,49 @@
-# Last edited: 2026-10-13 10:50
-"""Peak memory helpers."""
+# Last edited: 2026-10-13 10:42
+"""Peak memory helpers: a background thread polls the process's memory and keeps the maximum."""
 
-import resource
+import threading
+
+import psutil
 
 GB = 1e9
+POLL_SECONDS = 3 / 1000  # Check every three milliseconds
+
+# State shared by the functions below. Functions that assign to these need `global`.
+_peak_bytes = 0  # running maximum of the process's resident memory
+_stop = threading.Event()  # set to tell the polling thread to quit
+_thread: threading.Thread | None = None
+_process = psutil.Process()
+
+
+def read_peak() -> None:
+    """Thread body: update the running maximum until _stop is set."""
+    global _peak_bytes
+    # _stop.wait() sleeps for POLL_SECONDS, and wakes up early (returning True) when _stop is set.
+    while not _stop.wait(POLL_SECONDS):
+        _peak_bytes = max(_peak_bytes, _process.memory_info().rss)
+
+
+def _stop_thread() -> None:
+    global _thread
+    if _thread is not None:
+        _stop.set()
+        _thread.join()
+        _thread = None
 
 
 def reset_peak() -> None:
     """Reset the peak-memory counter before a measured run."""
-    # TODO(human): llama.cpp has no "reset peak memory" call, and ru_maxrss below can only go up.
-    # Pick a way to get a fresh peak for each measured run, then make this function (and peak_gb) do it.
-    #   Option A: measure in a fresh subprocess per run and read resource.getrusage(RUSAGE_CHILDREN).
-    #   Option B: compute it from sizes (model file size + KV cache size). Predictable, but an estimate.
-    # Whatever you choose, keep the two names reset_peak() and peak_gb(), or update timing.py and
-    # batching.py to match. Write down in the README what the number really means.
+    global _peak_bytes, _thread
+    _stop_thread()  # never leave an old thread running
+    _stop.clear()
+    _peak_bytes = _process.memory_info().rss  # one reading now, in case the run is shorter than a poll
+    _thread = threading.Thread(target=read_peak, daemon=True)  # daemon: dies with the program
+    _thread.start()
 
 
 def peak_gb() -> float:
-    """Peak memory in GB since the last reset."""
-    # Placeholder so the benchmark runs: the highest memory this whole process has ever held.
-    # On macOS ru_maxrss is in bytes (on Linux it is in kilobytes).
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / GB
+    """Peak memory in GB since the last reset (a close lower bound: spikes between polls are missed)."""
+    global _peak_bytes
+    _stop_thread()
+    _peak_bytes = max(_peak_bytes, _process.memory_info().rss)  # one last reading
+    return _peak_bytes / GB
