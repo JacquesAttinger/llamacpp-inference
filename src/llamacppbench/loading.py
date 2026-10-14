@@ -1,4 +1,4 @@
-# Last edited: 2026-10-13 10:58
+# Last edited: 2026-10-14 11:47
 """Load a GGUF model with llama.cpp (through llama-cpp-python)."""
 
 from llama_cpp import Llama
@@ -13,9 +13,9 @@ class Tokenizer:
     def __init__(self, llm: Llama):
         self._llm = llm
 
-    def encode(self, text: str) -> list[int]:
+    def encode(self, text: str, add_bos: bool = True) -> list[int]:
         # add_bos=True matches what the Hugging Face tokenizer did for Llama 3.
-        return self._llm.tokenize(text.encode(), add_bos=True)
+        return self._llm.tokenize(text.encode(), add_bos=add_bos)
 
 
 def load_model(
