@@ -1,4 +1,4 @@
-# Last edited: 2026-10-14 12:00
+# Last edited: 2026-10-14 13:00
 """Perplexity on fixed WikiText-2 chunks."""
 
 import math
@@ -37,9 +37,23 @@ def nll_from_scores(scores: np.ndarray, targets: list[int]) -> float:
 
 
 def wikitext2_tokens(tokenizer, split: str = "test") -> list[int]:
-    from datasets import load_dataset
+    import datasets
+    from huggingface_hub import constants
 
-    text = "\n\n".join(load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split=split)["text"])
+    def set_offline(offline: bool) -> None:  # two libraries, two flags
+        datasets.config.HF_DATASETS_OFFLINE = offline
+        constants.HF_HUB_OFFLINE = offline
+
+    args = ("Salesforce/wikitext", "wikitext-2-raw-v1")
+    # Try the local cache first: online mode sends a HEAD request even when the data is cached,
+    # and a flaky connection then stalls the run in retries.
+    set_offline(True)
+    try:
+        rows = datasets.load_dataset(*args, split=split)
+    except Exception:  # not cached yet, so download it
+        set_offline(False)
+        rows = datasets.load_dataset(*args, split=split)
+    text = "\n\n".join(rows["text"])
     return tokenizer.encode(text)
 
 
