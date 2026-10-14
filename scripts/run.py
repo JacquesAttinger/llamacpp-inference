@@ -1,6 +1,7 @@
-# Last edited: 2026-10-14 12:05
+# Last edited: 2026-10-14 11:47
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
+import argparse
 import csv
 import time
 from datetime import datetime
@@ -19,6 +20,7 @@ PROMPT = (
     "Give only one, not several."
 )
 MAX_TOKENS = 100  # safety stop in case the model never emits an end-of-text token
+MIN_N_CTX = 2048  # context size when the prompt is short; longer prompts get a bigger one
 CSV_PATH = Path("results/runs.csv")
 CSV_COLUMNS = [
     "timestamp",
@@ -42,12 +44,34 @@ def append_row(row: dict) -> None:
         writer.writerow(row)
 
 
+def make_prompt(model, tokenizer, n_tokens: int) -> list[int]:
+    """Exactly n_tokens ids: one start token, then PROMPT's tokens repeated and cut to fit."""
+    body = tokenizer.encode(PROMPT, add_bos=False)  # no start token, so it appears only once below
+    needed = n_tokens - 1  # one slot is taken by the start token
+    repeated = body * (needed // len(body) + 1)
+    return [model.token_bos()] + repeated[:needed]
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate text from a prompt and log the timings.")
+    parser.add_argument(
+        "--tokens",
+        type=int,
+        help="make the prompt exactly this many tokens by repeating the prompt text (default: use it once)",
+    )
+    args = parser.parse_args()
+    if args.tokens is not None and args.tokens < 1:
+        parser.error("--tokens must be at least 1")
+
     run_time = datetime.now().astimezone().isoformat(timespec="seconds")
-    model, tokenizer = load_model(MODEL_PATH)
-    prompt_tokens = tokenizer.encode(PROMPT)
-    print(f"Prompt: {PROMPT}")
-    print(f"Prompt tokens ({len(prompt_tokens)}): {prompt_tokens}")
+    n_ctx = max(MIN_N_CTX, (args.tokens or 0) + MAX_TOKENS)  # the prompt and the new tokens must both fit
+    model, tokenizer = load_model(MODEL_PATH, n_ctx=n_ctx)
+    if args.tokens is None:
+        prompt_tokens = tokenizer.encode(PROMPT)
+    else:
+        prompt_tokens = make_prompt(model, tokenizer, args.tokens)
+    print(f"Prompt text: {PROMPT}")
+    print(f"Prompt tokens ({len(prompt_tokens)}): {prompt_tokens[:10]}...")
     print("Output: ", end="", flush=True)
 
     # generate() is lazy: each next() call asks the model for one more token.
