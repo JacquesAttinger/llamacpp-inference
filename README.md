@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-14 11:22 -->
+<!-- Last edited: 2026-10-14 11:34 -->
 # llamacpp-bench
 
 A small project for learning to benchmark LLM inference on Apple silicon.
@@ -12,7 +12,7 @@ uv sync
 uv run pre-commit install
 ```
 
-The model files live in `models/` (16-bit, Q8_0, and Q4_K_M).
+The model files live in `models/` (16-bit and Q8_0).
 They are not in git. The script that made them is in the `v0-bench-reference` tag (`scripts/quantize.sh`).
 
 ## What is here
