@@ -1,0 +1,3 @@
+timestamp,model,prompt_tokens,generated_tokens,prefill_s,decode_s,decode_tps
+2026-10-14T11:42:03-07:00,8-bit,28,100,0.17,6.18,16.02
+2026-10-14T11:42:19-07:00,8-bit,28,100,0.1664,6.4249,15.41
