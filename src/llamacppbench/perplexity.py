@@ -1,7 +1,9 @@
-# Last edited: 2026-10-13 10:55
+# Last edited: 2026-10-14 12:00
 """Perplexity on fixed WikiText-2 chunks."""
 
 import math
+
+import numpy as np
 
 
 def perplexity_from_nll(total_nll: float, total_tokens: int) -> float:
@@ -18,14 +20,20 @@ def chunk_nll(model, chunk: list[int]) -> tuple[float, int]:
 
     `model` must be loaded with logits_all=True and n_ctx >= len(chunk).
     """
-    # TODO(human): score one chunk with numpy. The old MLX version fed chunk[:-1] to the model and
-    # compared its output with chunk[1:] using cross_entropy(reduction="sum"). Do the same here:
-    #   1. model.reset(), then model.eval(chunk[:-1])  (feeds the tokens, keeps all their scores)
-    #   2. model.scores[:n] is a (n, vocab) float32 numpy array of raw scores, one row per position
-    #   3. turn each row into log-probabilities (log-softmax) and pick the entry for the true next token
-    #   4. return (sum of the negative log-probabilities, n)  where n = len(chunk) - 1
-    # Watch out: exp() of raw scores overflows, so subtract each row's max before you exponentiate.
-    raise NotImplementedError("chunk_nll is a TODO(human); run bench.py with --no-ppl until it is done")
+    n = len(chunk) - 1
+    model.reset()  # otherwise llama-cpp-python may reuse the previous chunk's KV cache
+    model.eval(chunk[:-1])
+    return nll_from_scores(model.scores[:n], chunk[1:]), n
+
+
+def nll_from_scores(scores: np.ndarray, targets: list[int]) -> float:
+    """Summed negative log-likelihood of `targets`, given one row of raw scores per target."""
+    scores = scores.astype(np.float64)  # float64 keeps the sum over ~1000 rows accurate
+    # log-softmax: subtract the row max first so exp() cannot overflow.
+    shifted = scores - scores.max(axis=1, keepdims=True)
+    log_probs = shifted - np.log(np.exp(shifted).sum(axis=1, keepdims=True))
+    picked = np.take_along_axis(log_probs, np.asarray(targets)[:, None], axis=1)
+    return float(-picked.sum())
 
 
 def wikitext2_tokens(tokenizer, split: str = "test") -> list[int]:

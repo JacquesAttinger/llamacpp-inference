@@ -1,13 +1,21 @@
 # Last edited: 2026-10-11 12:00
 import math
 
-from llamacppbench.perplexity import chunk_tokens, perplexity_from_nll
+import numpy as np
+
+from llamacppbench.perplexity import chunk_tokens, nll_from_scores, perplexity_from_nll
 from llamacppbench.results import BenchRecord, load_records, save_records
 from llamacppbench.timing import TimingResult, summarize
 
 
 def test_perplexity_uniform():
     assert math.isclose(perplexity_from_nll(math.log(4) * 10, 10), 4.0)
+
+
+def test_nll_from_scores_uniform_and_large_scores():
+    # Equal scores over 4 words: each target has probability 1/4. Huge scores must not overflow.
+    scores = np.full((3, 4), 1000.0, dtype=np.float32)
+    assert math.isclose(nll_from_scores(scores, [0, 1, 3]), 3 * math.log(4))
 
 
 def test_chunk_tokens_drops_tail():
