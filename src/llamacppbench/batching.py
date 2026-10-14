@@ -1,4 +1,4 @@
-# Last edited: 2026-10-14 09:40
+# Last edited: 2026-10-14 11:06
 """Batched generation with llama.cpp's low-level batch API (llama_cpp.llama_decode)."""
 
 import time
@@ -50,9 +50,9 @@ def time_batch(
     model, tokenizer, prompt_tokens: list[int], batch_size: int, max_tokens: int = 128
 ) -> TimingResult:
     """Run batch_size copies of one prompt; report aggregate tokens per second."""
-    n_prompt = len(prompt_tokens)
-    reset_peak()
-    ctx = _make_context(model, batch_size, n_prompt, max_tokens)
+    n_prompt = len(prompt_tokens)  # length of the prompt tokens
+    reset_peak()  # reset peak for accurate memory usage calculation
+    ctx = _make_context(model, batch_size, n_prompt, max_tokens)  #
     batch = llama_cpp.llama_batch_init(max(n_prompt, batch_size), 0, batch_size)
     smpl = llama_cpp.llama_sampler_chain_init(llama_cpp.llama_sampler_chain_default_params())
     llama_cpp.llama_sampler_chain_add(smpl, llama_cpp.llama_sampler_init_greedy())
