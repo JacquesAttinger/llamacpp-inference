@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-16 08:05 -->
+<!-- Last edited: 2026-10-16 07:34 -->
 # llamacpp-bench
 
 A small project for learning to benchmark LLM inference on Apple silicon.
@@ -52,15 +52,53 @@ The table above is the `MODELS` dict at the top of `scripts/run.py`.
 To add another model, add a line to that dict.
 The prompt text is the `PROMPT` constant in the same file.
 
+To set the sampling temperature, pass `--temp`.
+The default is `0`, which always takes the most likely token, so the text is the same every time.
+A higher value, such as `0.8`, picks the next token at random from the likely ones, so the text changes from run to run.
+A negative value is an error.
+
+```bash
+uv run python scripts/run.py --temp 0.8
+```
+
+To repeat a run that uses a temperature above `0`, pass `--seed`.
+The seed starts the random number generator that makes the picks.
+The same seed with the same model, prompt and settings gives the same text.
+It must be a whole number from `0` to `4294967294`.
+If you leave it out, the script picks a random seed and writes it to the CSV, so you can repeat that run later.
+The seed has no effect when `--temp` is `0`.
+
+```bash
+uv run python scripts/run.py --temp 0.8 --seed 42
+```
+
+### Flags together
+
+All flags are optional, and they can come in any order.
+This README uses one order, the same as `--help` shows them: `--tokens`, `--bits`, `--temp`, `--seed`.
+
+```bash
+uv run python scripts/run.py --tokens 1000 --bits 4 --temp 0.8 --seed 42
+```
+
+| Flag | Value | Default |
+| --- | --- | --- |
+| `--tokens` | whole number, at least `1` | the prompt text once |
+| `--bits` | `4`, `8` or `16` | `8` |
+| `--temp` | number, `0` or more | `0` |
+| `--seed` | whole number, `0` to `4294967294` | a random one |
+
 Each run adds a row with these columns:
 
+- `temp`: the temperature used.
+- `seed`: the seed used. It is empty in the oldest rows, which were all run with `temp` `0`.
 - `prefill_s`: seconds the model spent reading the prompt, before it made the first token.
 - `decode_s`: seconds it spent writing all the later tokens.
 - `decode_tps`: tokens written per second during decode.
 
 ## What is here
 
-`src/llamacppbench/loading.py` has `load_model(path, n_ctx, logits_all)`.
+`src/llamacppbench/loading.py` has `load_model(path, n_ctx, logits_all, seed)`.
 It returns a `Llama` model and a `Tokenizer` with an `.encode(text)` method.
 
 `scripts/run.py` is the command-line script described above.
