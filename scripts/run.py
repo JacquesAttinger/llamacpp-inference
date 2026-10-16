@@ -1,8 +1,9 @@
-# Last edited: 2026-10-16 07:25
+# Last edited: 2026-10-16 07:28
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
 import csv
+import random
 import time
 from datetime import datetime
 from pathlib import Path
@@ -20,12 +21,14 @@ PROMPT = (
     "Give only one, not several."
 )
 MAX_TOKENS = 100  # safety stop in case the model never emits an end-of-text token
+MAX_SEED = 2**32 - 2  # 2**32 - 1 is llama.cpp's "random" marker, so it is not a usable seed
 MIN_N_CTX = 2048  # context size when the prompt is short; longer prompts get a bigger one
 CSV_PATH = Path("results/runs.csv")
 CSV_COLUMNS = [
     "timestamp",
     "model",
     "temp",
+    "seed",
     "prompt_tokens",
     "generated_tokens",
     "prefill_s",
@@ -108,15 +111,27 @@ def main() -> None:
         default=0.0,
         help="sampling temperature; 0 always takes the most likely token (default: 0)",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help=(
+            "seed for the random picks when temp > 0; the same seed and settings give the same text "
+            "(default: a random one, which is logged)"
+        ),
+    )
     args = parser.parse_args()
     if args.tokens is not None and args.tokens < 1:
         parser.error("--tokens must be at least 1")
     if args.temp < 0:
         parser.error("--temp must not be negative")
+    if args.seed is not None and not 0 <= args.seed <= MAX_SEED:
+        parser.error(f"--seed must be between 0 and {MAX_SEED}")
+    # Pick the random seed ourselves, so the log can replay the run.
+    seed = args.seed if args.seed is not None else random.randint(0, MAX_SEED)
 
     run_time = datetime.now().astimezone().isoformat(timespec="seconds")
     n_ctx = max(MIN_N_CTX, (args.tokens or 0) + MAX_TOKENS)  # the prompt and the new tokens must both fit
-    model, tokenizer = load_model(MODELS[args.bits], n_ctx=n_ctx)
+    model, tokenizer = load_model(MODELS[args.bits], n_ctx=n_ctx, seed=seed)
     if args.tokens is None:
         prompt_tokens = tokenizer.encode(PROMPT)
     else:
@@ -137,6 +152,7 @@ def main() -> None:
             "timestamp": run_time,
             "model": f"{args.bits}-bit",
             "temp": args.temp,
+            "seed": seed,
             "prompt_tokens": len(prompt_tokens),
             "generated_tokens": result["generated_tokens"],
             "prefill_s": round(result["prefill_s"], 4),
