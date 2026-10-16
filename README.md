@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-16 07:20 -->
+<!-- Last edited: 2026-10-16 08:05 -->
 # llamacpp-bench
 
 A small project for learning to benchmark LLM inference on Apple silicon.
@@ -64,6 +64,10 @@ Each run adds a row with these columns:
 It returns a `Llama` model and a `Tokenizer` with an `.encode(text)` method.
 
 `scripts/run.py` is the command-line script described above.
+
+`results/Experiments/` has one folder per experiment.
+Each folder has an `experiment.md` that describes it, the script that runs it, the CSV data, and a plot.
+The first one is `quantization_decode_tps/`.
 
 ## Old version
 
