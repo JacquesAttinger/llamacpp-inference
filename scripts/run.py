@@ -1,4 +1,4 @@
-# Last edited: 2026-10-16 07:40
+# Last edited: 2026-10-16 07:25
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
@@ -25,6 +25,7 @@ CSV_PATH = Path("results/runs.csv")
 CSV_COLUMNS = [
     "timestamp",
     "model",
+    "temp",
     "prompt_tokens",
     "generated_tokens",
     "prefill_s",
@@ -52,14 +53,17 @@ def make_prompt(model, tokenizer, n_tokens: int) -> list[int]:
     return [model.token_bos()] + repeated[:needed]
 
 
-def generate_timed(model, prompt_tokens: list[int], on_token=None) -> dict:
-    """Generate up to MAX_TOKENS greedily and time the prefill and the decode steps."""
+def generate_timed(model, prompt_tokens: list[int], temp: float = 0.0, on_token=None) -> dict:
+    """Generate up to MAX_TOKENS and time the prefill and the decode steps.
+
+    temp 0.0 always takes the most likely token (greedy). A higher temp picks at random, so the text varies.
+    """
     model.reset()  # forget the cached prompt, so every call pays for prefill again
     # generate() is lazy: each next() call asks the model for one more token.
     # The first next() reads the whole prompt (prefill) and returns token 1.
     # Each later next() is one decode step.
     # We time only the next() calls, so printing the text does not count.
-    stream = model.generate(prompt_tokens, temp=0.0)
+    stream = model.generate(prompt_tokens, temp=temp)
     step_times = []  # seconds each next() call took
     tokens = []
     while len(tokens) < MAX_TOKENS:
@@ -98,9 +102,17 @@ def main() -> None:
         default=DEFAULT_BITS,
         help=f"which model to run, by bits per weight (default: {DEFAULT_BITS})",
     )
+    parser.add_argument(
+        "--temp",
+        type=float,
+        default=0.0,
+        help="sampling temperature; 0 always takes the most likely token (default: 0)",
+    )
     args = parser.parse_args()
     if args.tokens is not None and args.tokens < 1:
         parser.error("--tokens must be at least 1")
+    if args.temp < 0:
+        parser.error("--temp must not be negative")
 
     run_time = datetime.now().astimezone().isoformat(timespec="seconds")
     n_ctx = max(MIN_N_CTX, (args.tokens or 0) + MAX_TOKENS)  # the prompt and the new tokens must both fit
@@ -116,7 +128,7 @@ def main() -> None:
     def show(token: int) -> None:
         print(model.detokenize([token]).decode(errors="replace"), end="", flush=True)
 
-    result = generate_timed(model, prompt_tokens, on_token=show)
+    result = generate_timed(model, prompt_tokens, temp=args.temp, on_token=show)
     print()
     model.close()
 
@@ -124,6 +136,7 @@ def main() -> None:
         {
             "timestamp": run_time,
             "model": f"{args.bits}-bit",
+            "temp": args.temp,
             "prompt_tokens": len(prompt_tokens),
             "generated_tokens": result["generated_tokens"],
             "prefill_s": round(result["prefill_s"], 4),
