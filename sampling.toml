@@ -1,0 +1,45 @@
+# Last edited: 2026-10-16 07:44
+# Sampling settings for scripts/run.py. This file is committed, so it holds the shared defaults.
+#
+# To try other values without touching git, make a file named sampling.local.toml next to this one.
+# Git ignores it. List only the settings you want to change, for example:
+#
+#     top_k = 0
+#     top_p = 1.0
+#     min_p = 0.0
+#
+# Every run writes the final values to results/runs.csv.
+# When sampling.local.toml changes a value, run.py prints which ones at the start.
+#
+# How these work:
+# The model scores every word it knows (about 128,000 of them) for the next step.
+# The four filters below throw away unlikely words FIRST.
+# Then --temp reshuffles the words that are left, and one is picked at random.
+# So with strict filters, a very high --temp still gives readable text.
+# To see the full effect of --temp, turn the filters off (the "off" value in each comment below).
+# The filters do nothing when --temp is 0, because the model then always takes the top word.
+
+# top_k: keep only the K most likely words.
+#   Range: a whole number, 0 or more.
+#   Off: 0.
+#   Sensible: 20 to 100. Lower is safer and more repeatable. 1 acts like --temp 0.
+top_k = 40
+
+# top_p: keep the most likely words until their chances add up to this number.
+#   Range: 0 to 1.
+#   Off: 1.0.
+#   Sensible: 0.8 to 0.95. Lower is safer, because fewer words survive.
+top_p = 0.95
+
+# min_p: drop every word that is less than this fraction as likely as the best word.
+#   Range: 0 to 1.
+#   Off: 0.0.
+#   Sensible: 0.02 to 0.1. Higher is safer.
+#   With 0.05, a word must be at least 1/20 as likely as the top word to stay.
+min_p = 0.05
+
+# typical_p: keep the words whose surprise is closest to the average surprise.
+#   Range: 0 to 1.
+#   Off: 1.0.
+#   Sensible: most people leave it off. Try 0.9 or lower to see what it does.
+typical_p = 1.0
