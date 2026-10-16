@@ -1,0 +1,4 @@
+bits,trials,mean_decode_tps,std_decode_tps
+16,5,8.57,0.2
+8,5,16.02,0.41
+4,5,26.92,0.07

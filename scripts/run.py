@@ -1,4 +1,4 @@
-# Last edited: 2026-10-16 07:20
+# Last edited: 2026-10-16 07:40
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
@@ -52,6 +52,38 @@ def make_prompt(model, tokenizer, n_tokens: int) -> list[int]:
     return [model.token_bos()] + repeated[:needed]
 
 
+def generate_timed(model, prompt_tokens: list[int], on_token=None) -> dict:
+    """Generate up to MAX_TOKENS greedily and time the prefill and the decode steps."""
+    model.reset()  # forget the cached prompt, so every call pays for prefill again
+    # generate() is lazy: each next() call asks the model for one more token.
+    # The first next() reads the whole prompt (prefill) and returns token 1.
+    # Each later next() is one decode step.
+    # We time only the next() calls, so printing the text does not count.
+    stream = model.generate(prompt_tokens, temp=0.0)
+    step_times = []  # seconds each next() call took
+    tokens = []
+    while len(tokens) < MAX_TOKENS:
+        start = time.perf_counter()
+        token = next(stream)
+        step_times.append(time.perf_counter() - start)
+        if token == model.token_eos():
+            break
+        tokens.append(token)
+        if on_token is not None:
+            on_token(token)
+
+    # Token 1 came out of the prefill call, so the decode steps made tokens 2 to N.
+    prefill_s = step_times[0]
+    decode_s = sum(step_times[1 : len(tokens)])
+    decode_tps = (len(tokens) - 1) / decode_s if decode_s > 0 else 0.0
+    return {
+        "generated_tokens": len(tokens),
+        "prefill_s": prefill_s,
+        "decode_s": decode_s,
+        "decode_tps": decode_tps,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate text from a prompt and log the timings.")
     parser.add_argument(
@@ -81,40 +113,28 @@ def main() -> None:
     print(f"Prompt tokens ({len(prompt_tokens)}): {prompt_tokens[:10]}...")
     print("Output: ", end="", flush=True)
 
-    # generate() is lazy: each next() call asks the model for one more token.
-    # The first next() reads the whole prompt (prefill) and returns token 1.
-    # Each later next() is one decode step.
-    # We time only the next() calls, so printing the text does not count.
-    stream = model.generate(prompt_tokens, temp=0.0)
-    step_times = []  # seconds each next() call took
-    tokens = []
-    while len(tokens) < MAX_TOKENS:
-        start = time.perf_counter()
-        token = next(stream)
-        step_times.append(time.perf_counter() - start)
-        if token == model.token_eos():
-            break
-        tokens.append(token)
+    def show(token: int) -> None:
         print(model.detokenize([token]).decode(errors="replace"), end="", flush=True)
+
+    result = generate_timed(model, prompt_tokens, on_token=show)
     print()
     model.close()
 
-    # Token 1 came out of the prefill call, so the decode steps made tokens 2 to N.
-    prefill_s = step_times[0]
-    decode_s = sum(step_times[1 : len(tokens)])
-    decode_tps = (len(tokens) - 1) / decode_s if decode_s > 0 else 0.0
     append_row(
         {
             "timestamp": run_time,
             "model": f"{args.bits}-bit",
             "prompt_tokens": len(prompt_tokens),
-            "generated_tokens": len(tokens),
-            "prefill_s": round(prefill_s, 4),
-            "decode_s": round(decode_s, 4),
-            "decode_tps": round(decode_tps, 2),
+            "generated_tokens": result["generated_tokens"],
+            "prefill_s": round(result["prefill_s"], 4),
+            "decode_s": round(result["decode_s"], 4),
+            "decode_tps": round(result["decode_tps"], 2),
         }
     )
-    print(f"prefill {prefill_s:.3f}s, decode {decode_s:.3f}s, {decode_tps:.1f} tokens/s -> {CSV_PATH}")
+    print(
+        f"prefill {result['prefill_s']:.3f}s, decode {result['decode_s']:.3f}s, "
+        f"{result['decode_tps']:.1f} tokens/s -> {CSV_PATH}"
+    )
 
 
 if __name__ == "__main__":
