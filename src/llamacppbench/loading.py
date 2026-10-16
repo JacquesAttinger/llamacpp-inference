@@ -4,7 +4,7 @@
 from llama_cpp import Llama
 
 # Written by scripts/quantize.sh. Relative to the repo root.
-DEFAULT_MODEL = "models/llama-3.1-8b-f16.gguf"
+DEFAULT_MODEL = "models/llama-3.1-8b-q8_0.gguf"
 
 
 class Tokenizer:
