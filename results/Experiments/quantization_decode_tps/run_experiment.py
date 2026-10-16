@@ -1,4 +1,4 @@
-# Last edited: 2026-10-16 07:45
+# Last edited: 2026-10-16 08:45
 """Measure how quantization changes decode speed (tokens per second) for Llama 3.1 8B.
 
 For each model (16-bit, 8-bit, 4-bit): load it once, run 7 trials on the birthday prompt,
@@ -113,6 +113,7 @@ def plot(trial_rows: list[dict], summary: list[dict]) -> None:
     ax.set_xscale("log", base=2)  # 4, 8, 16 are evenly spaced on a log2 axis
     ax.set_xticks(bits, [str(b) for b in bits])
     ax.minorticks_off()
+    ax.invert_xaxis()  # 16 on the left, 4 on the right
     ax.set_xlabel("Bits per weight")
     ax.set_ylabel("Decode speed (tokens/s)")
     ax.set_title("Llama 3.1 8B: decode speed vs quantization")
