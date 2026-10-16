@@ -1,4 +1,4 @@
-# Last edited: 2026-10-14 11:47
+# Last edited: 2026-10-16 07:20
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
@@ -9,12 +9,12 @@ from pathlib import Path
 
 from llamacppbench.loading import load_model
 
-MODEL_PATH = "models/llama-3.1-8b-q8_0.gguf"
-# MODEL_PATH = "models/llama-3.1-8b-f16.gguf"
-MODEL_LABELS = {
-    "models/llama-3.1-8b-f16.gguf": "16-bit",
-    "models/llama-3.1-8b-q8_0.gguf": "8-bit",
+MODELS = {  # bits per weight -> model file; add a line here to support a new model
+    4: "models/llama-3.1-8b-q4_k_m.gguf",
+    8: "models/llama-3.1-8b-q8_0.gguf",
+    16: "models/llama-3.1-8b-f16.gguf",
 }
+DEFAULT_BITS = 8
 PROMPT = (
     "Come up with one idea for a happy birthday text message for my mom's 54th birthday. "
     "Give only one, not several."
@@ -59,13 +59,20 @@ def main() -> None:
         type=int,
         help="make the prompt exactly this many tokens by repeating the prompt text (default: use it once)",
     )
+    parser.add_argument(
+        "--bits",
+        type=int,
+        choices=sorted(MODELS),
+        default=DEFAULT_BITS,
+        help=f"which model to run, by bits per weight (default: {DEFAULT_BITS})",
+    )
     args = parser.parse_args()
     if args.tokens is not None and args.tokens < 1:
         parser.error("--tokens must be at least 1")
 
     run_time = datetime.now().astimezone().isoformat(timespec="seconds")
     n_ctx = max(MIN_N_CTX, (args.tokens or 0) + MAX_TOKENS)  # the prompt and the new tokens must both fit
-    model, tokenizer = load_model(MODEL_PATH, n_ctx=n_ctx)
+    model, tokenizer = load_model(MODELS[args.bits], n_ctx=n_ctx)
     if args.tokens is None:
         prompt_tokens = tokenizer.encode(PROMPT)
     else:
@@ -99,7 +106,7 @@ def main() -> None:
     append_row(
         {
             "timestamp": run_time,
-            "model": MODEL_LABELS[MODEL_PATH],
+            "model": f"{args.bits}-bit",
             "prompt_tokens": len(prompt_tokens),
             "generated_tokens": len(tokens),
             "prefill_s": round(prefill_s, 4),
