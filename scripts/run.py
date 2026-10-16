@@ -1,4 +1,4 @@
-# Last edited: 2026-10-16 07:28
+# Last edited: 2026-10-16 07:36
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
@@ -138,13 +138,14 @@ def main() -> None:
         prompt_tokens = make_prompt(model, tokenizer, args.tokens)
     print(f"Prompt text: {PROMPT}")
     print(f"Prompt tokens ({len(prompt_tokens)}): {prompt_tokens[:10]}...")
-    print("Output: ", end="", flush=True)
+    print("\nOutput:")  # the reply sits between quotation marks, so it is easy to tell from the other lines
+    print('"', end="", flush=True)
 
     def show(token: int) -> None:
         print(model.detokenize([token]).decode(errors="replace"), end="", flush=True)
 
     result = generate_timed(model, prompt_tokens, temp=args.temp, on_token=show)
-    print()
+    print('"\n')
     model.close()
 
     append_row(

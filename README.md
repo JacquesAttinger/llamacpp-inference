@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-16 07:34 -->
+<!-- Last edited: 2026-10-16 07:36 -->
 # llamacpp-bench
 
 A small project for learning to benchmark LLM inference on Apple silicon.
@@ -24,6 +24,7 @@ uv run python scripts/run.py
 ```
 
 The script loads a model, feeds it one prompt, and prints the reply as the model writes it.
+The reply sits under an `Output:` line and between quotation marks, so it is easy to tell from the other lines.
 It stops at the end-of-text token or after 100 new tokens, whichever comes first.
 Then it prints the timings and adds one row to `results/runs.csv`.
 
