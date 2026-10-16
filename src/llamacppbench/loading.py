@@ -1,10 +1,12 @@
-# Last edited: 2026-10-14 11:47
+# Last edited: 2026-10-16 07:28
 """Load a GGUF model with llama.cpp (through llama-cpp-python)."""
 
 from llama_cpp import Llama
 
 # Written by scripts/quantize.sh. Relative to the repo root.
 DEFAULT_MODEL = "models/llama-3.1-8b-q8_0.gguf"
+# llama.cpp's "pick a fresh random seed" value, so the default keeps its old behavior.
+RANDOM_SEED = 0xFFFFFFFF
 
 
 class Tokenizer:
@@ -19,12 +21,13 @@ class Tokenizer:
 
 
 def load_model(
-    path: str = DEFAULT_MODEL, n_ctx: int = 2048, logits_all: bool = False
+    path: str = DEFAULT_MODEL, n_ctx: int = 2048, logits_all: bool = False, seed: int = RANDOM_SEED
 ) -> tuple[Llama, Tokenizer]:
     """Return (model, tokenizer) for a GGUF file.
 
     n_ctx is the KV cache size in tokens. A bigger value uses more memory, so size it for the run.
     logits_all keeps the scores for every position (perplexity needs them) and costs n_ctx * vocab * 4 bytes.
+    seed starts the random number generator that sampling uses. It only matters when temp is above 0.
     """
     model = Llama(
         model_path=path,
@@ -37,6 +40,7 @@ def load_model(
         # pages counted as ours, so the peak-memory readings jump around by several GB between runs.
         use_mmap=False,
         logits_all=logits_all,
+        seed=seed,
         verbose=False,
     )
     return model, Tokenizer(model)
