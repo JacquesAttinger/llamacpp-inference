@@ -91,8 +91,6 @@ The scaffold is the empty project that holds all Phase 1 work.
 
 - Task benchmark (MMLU and similar): add after first results.
 - Phase 2 (vLLM on a rented GPU).
-- The Linear issue for this work: `linear-sync` will run at PR time.
-  Outside `~/code/hemut3/`, I will ask which Linear workspace to use first.
 
 ## Verification
 
