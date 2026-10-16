@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-16 07:36 -->
+<!-- Last edited: 2026-10-16 07:45 -->
 # llamacpp-bench
 
 A small project for learning to benchmark LLM inference on Apple silicon.
@@ -89,10 +89,33 @@ uv run python scripts/run.py --tokens 1000 --bits 4 --temp 0.8 --seed 42
 | `--temp` | number, `0` or more | `0` |
 | `--seed` | whole number, `0` to `4294967294` | a random one |
 
+### Sampling settings
+
+Four more settings decide which words the model may pick: `top_k`, `top_p`, `min_p` and `typical_p`.
+They are not flags. They live in `sampling.toml` in the repo root, with a comment on each one that says what it does, its range and some sensible values.
+The model applies these filters first, and `--temp` reshuffles the words that are left.
+So with the default filters, even a very high `--temp` still gives readable text.
+To see the full effect of `--temp`, turn the filters off.
+
+To try other values without changing git, make a file called `sampling.local.toml` next to `sampling.toml`.
+Git ignores it. List only the settings you want to change:
+
+```toml
+top_k = 0
+top_p = 1.0
+min_p = 0.0
+```
+
+When that file changes a value, `run.py` prints the changes on the first line of the run.
+A wrong value, such as `top_p = 3`, stops the run with an error that names the file and the setting.
+Delete the file to go back to the committed values.
+
 Each run adds a row with these columns:
 
 - `temp`: the temperature used.
 - `seed`: the seed used. It is empty in the oldest rows, which were all run with `temp` `0`.
+- `top_k`, `top_p`, `min_p`, `typical_p`: the sampling settings used.
+  The oldest rows show `40`, `0.95`, `0.05` and `1.0`, which were the library defaults that every run used before these settings existed.
 - `prefill_s`: seconds the model spent reading the prompt, before it made the first token.
 - `decode_s`: seconds it spent writing all the later tokens.
 - `decode_tps`: tokens written per second during decode.
@@ -101,6 +124,8 @@ Each run adds a row with these columns:
 
 `src/llamacppbench/loading.py` has `load_model(path, n_ctx, logits_all, seed)`.
 It returns a `Llama` model and a `Tokenizer` with an `.encode(text)` method.
+
+`src/llamacppbench/sampling.py` reads and checks `sampling.toml` and `sampling.local.toml`.
 
 `scripts/run.py` is the command-line script described above.
 

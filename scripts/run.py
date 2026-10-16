@@ -1,4 +1,4 @@
-# Last edited: 2026-10-16 07:36
+# Last edited: 2026-10-16 07:45
 """Load a model, tokenize one prompt, print the generated tokens, and log the timings to a CSV."""
 
 import argparse
@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from llamacppbench.loading import load_model
+from llamacppbench.sampling import LOCAL_PATH, NAMES, load_sampling
 
 MODELS = {  # bits per weight -> model file; add a line here to support a new model
     4: "models/llama-3.1-8b-q4_k_m.gguf",
@@ -29,6 +30,7 @@ CSV_COLUMNS = [
     "model",
     "temp",
     "seed",
+    *NAMES,  # top_k, top_p, min_p, typical_p
     "prompt_tokens",
     "generated_tokens",
     "prefill_s",
@@ -56,17 +58,20 @@ def make_prompt(model, tokenizer, n_tokens: int) -> list[int]:
     return [model.token_bos()] + repeated[:needed]
 
 
-def generate_timed(model, prompt_tokens: list[int], temp: float = 0.0, on_token=None) -> dict:
+def generate_timed(
+    model, prompt_tokens: list[int], temp: float = 0.0, sampling: dict | None = None, on_token=None
+) -> dict:
     """Generate up to MAX_TOKENS and time the prefill and the decode steps.
 
     temp 0.0 always takes the most likely token (greedy). A higher temp picks at random, so the text varies.
+    sampling holds top_k, top_p, min_p and typical_p. Leave it out to use llama-cpp-python's own defaults.
     """
     model.reset()  # forget the cached prompt, so every call pays for prefill again
     # generate() is lazy: each next() call asks the model for one more token.
     # The first next() reads the whole prompt (prefill) and returns token 1.
     # Each later next() is one decode step.
     # We time only the next() calls, so printing the text does not count.
-    stream = model.generate(prompt_tokens, temp=temp)
+    stream = model.generate(prompt_tokens, temp=temp, **(sampling or {}))
     step_times = []  # seconds each next() call took
     tokens = []
     while len(tokens) < MAX_TOKENS:
@@ -91,7 +96,8 @@ def generate_timed(model, prompt_tokens: list[int], temp: float = 0.0, on_token=
     }
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
+    """Read and check the command-line flags."""
     parser = argparse.ArgumentParser(description="Generate text from a prompt and log the timings.")
     parser.add_argument(
         "--tokens",
@@ -126,6 +132,18 @@ def main() -> None:
         parser.error("--temp must not be negative")
     if args.seed is not None and not 0 <= args.seed <= MAX_SEED:
         parser.error(f"--seed must be between 0 and {MAX_SEED}")
+    return args
+
+
+def main() -> None:
+    args = parse_args()
+    try:
+        sampling, overrides = load_sampling()
+    except ValueError as error:
+        raise SystemExit(f"error: {error}")
+    if overrides:
+        changes = ", ".join(f"{name}={value}" for name, value in overrides.items())
+        print(f"Using overrides from {LOCAL_PATH.name}: {changes}")
     # Pick the random seed ourselves, so the log can replay the run.
     seed = args.seed if args.seed is not None else random.randint(0, MAX_SEED)
 
@@ -144,7 +162,7 @@ def main() -> None:
     def show(token: int) -> None:
         print(model.detokenize([token]).decode(errors="replace"), end="", flush=True)
 
-    result = generate_timed(model, prompt_tokens, temp=args.temp, on_token=show)
+    result = generate_timed(model, prompt_tokens, temp=args.temp, sampling=sampling, on_token=show)
     print('"\n')
     model.close()
 
@@ -154,6 +172,7 @@ def main() -> None:
             "model": f"{args.bits}-bit",
             "temp": args.temp,
             "seed": seed,
+            **sampling,
             "prompt_tokens": len(prompt_tokens),
             "generated_tokens": result["generated_tokens"],
             "prefill_s": round(result["prefill_s"], 4),
