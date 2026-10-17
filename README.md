@@ -80,6 +80,13 @@ The 4-bit file is three times as fast and scores 2.8% worse on this text.
 Each model was run once, so a gap as small as 0.05% is below what this test can separate.
 See [`results/Experiments/quantization_perplexity/experiment.md`](results/Experiments/quantization_perplexity/experiment.md) for the method and limits.
 
+The third experiment changes the prompt length instead of the model.
+It runs the 4-bit model on prompts of 100 to 1000 tokens and times the two phases of a reply.
+Prefill (reading the prompt) took 0.18 s at 100 tokens and 1.67 s at 1000 tokens, so 10x more prompt took 9.5x more time.
+Decode speed stayed near 24 tokens per second at every length.
+Each length has 3 trials, so small differences are noise.
+See [`results/Experiments/prompt_length_prefill_decode/experiment.md`](results/Experiments/prompt_length_prefill_decode/experiment.md) for the method and limits.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
@@ -217,6 +224,12 @@ It takes about 26 minutes and uses most of the Mac's memory, because the 16-bit 
 
 ```sh
 uv run python results/Experiments/quantization_perplexity/run_experiment.py
+```
+
+The prompt length experiment loads only the 4-bit model and takes a few minutes:
+
+```sh
+uv run python results/Experiments/prompt_length_prefill_decode/run_experiment.py
 ```
 
 ### Project layout
