@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-17 09:57 -->
+<!-- Last edited: 2026-10-17 10:00 -->
 <a id="readme-top"></a>
 
 [![Forks][forks-shield]][forks-url]
@@ -14,7 +14,7 @@
     Measure how fast Llama 3.1 8B runs on your Mac, and how much quantization changes that speed.
     <br />
     <br />
-    <a href="https://github.com/JacquesAttinger/mlx-inference/issues">Report a problem or ask a question</a>
+    <a href="https://github.com/JacquesAttinger/llamacpp-inference/issues">Report a problem or ask a question</a>
   </p>
 </div>
 
@@ -65,6 +65,21 @@ A token is a small piece of text, often a short word or part of a word.
 Decode speed is how many tokens the model writes per second after it has read the prompt.
 The full method, the limits (one prompt, one machine) and the raw data are in [`results/Experiments/quantization_decode_tps/experiment.md`](results/Experiments/quantization_decode_tps/experiment.md).
 
+Speed is only half of the story, so the second experiment checks quality.
+It gives each model the test text of Wikitext-2 (a set of Wikipedia articles) and measures perplexity: how surprised the model is by the real next token.
+Lower is better.
+
+| Model | Perplexity | Change vs 16-bit |
+| --- | --- | --- |
+| 16-bit | 7.32 | 0 |
+| 8-bit (`Q8_0`) | 7.33 | +0.05% |
+| 4-bit (`Q4_K_M`) | 7.53 | +2.8% |
+
+The 8-bit file is about twice as fast as 16-bit and scores almost the same.
+The 4-bit file is three times as fast and scores 2.8% worse on this text.
+Each model was run once, so a gap as small as 0.05% is below what this test can separate.
+See [`results/Experiments/quantization_perplexity/experiment.md`](results/Experiments/quantization_perplexity/experiment.md) for the method and limits.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
@@ -94,8 +109,8 @@ The full method, the limits (one prompt, one machine) and the raw data are in [`
 
 1. Clone the repo.
    ```sh
-   git clone https://github.com/JacquesAttinger/mlx-inference.git
-   cd mlx-inference
+   git clone https://github.com/JacquesAttinger/llamacpp-inference.git
+   cd llamacpp-inference
    ```
 2. Install the Python packages.
    ```sh
@@ -197,10 +212,18 @@ To repeat the first experiment, which takes a few minutes:
 uv run python results/Experiments/quantization_decode_tps/run_experiment.py
 ```
 
+The perplexity experiment downloads Wikitext-2 into `data/` on the first run (`data/` is not in git).
+It takes about 26 minutes and uses most of the Mac's memory, because the 16-bit model is 16 GB:
+
+```sh
+uv run python results/Experiments/quantization_perplexity/run_experiment.py
+```
+
 ### Project layout
 
 - `src/llamacppbench/loading.py` has `load_model(path, n_ctx, logits_all, seed)`. It returns a `Llama` model and a `Tokenizer` with an `.encode(text)` method.
 - `src/llamacppbench/sampling.py` reads and checks `sampling.toml` and `sampling.local.toml`.
+- `src/llamacppbench/perplexity.py` has the chunking and the maths for the perplexity experiment.
 - `scripts/run.py` is the command-line script described above.
 - `tests/` has the tests. Run them with `uv run pytest`.
 
@@ -224,7 +247,7 @@ The model files are not part of this repo, and Meta's Llama license applies to t
 
 Jacques Attinger - [@JacquesAttinger](https://github.com/JacquesAttinger)
 
-Project Link: [https://github.com/JacquesAttinger/mlx-inference](https://github.com/JacquesAttinger/mlx-inference)
+Project Link: [https://github.com/JacquesAttinger/llamacpp-inference](https://github.com/JacquesAttinger/llamacpp-inference)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -237,14 +260,14 @@ Project Link: [https://github.com/JacquesAttinger/mlx-inference](https://github.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[forks-shield]: https://img.shields.io/github/forks/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[forks-url]: https://github.com/JacquesAttinger/mlx-inference/network/members
-[stars-shield]: https://img.shields.io/github/stars/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[stars-url]: https://github.com/JacquesAttinger/mlx-inference/stargazers
-[issues-shield]: https://img.shields.io/github/issues/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[issues-url]: https://github.com/JacquesAttinger/mlx-inference/issues
-[license-shield]: https://img.shields.io/github/license/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[license-url]: https://github.com/JacquesAttinger/mlx-inference/blob/main/LICENSE
+[forks-shield]: https://img.shields.io/github/forks/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[forks-url]: https://github.com/JacquesAttinger/llamacpp-inference/network/members
+[stars-shield]: https://img.shields.io/github/stars/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[stars-url]: https://github.com/JacquesAttinger/llamacpp-inference/stargazers
+[issues-shield]: https://img.shields.io/github/issues/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[issues-url]: https://github.com/JacquesAttinger/llamacpp-inference/issues
+[license-shield]: https://img.shields.io/github/license/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[license-url]: https://github.com/JacquesAttinger/llamacpp-inference/blob/main/LICENSE
 [product-screenshot]: images/screenshot.png
 [experiment-plot]: results/Experiments/quantization_decode_tps/decode_tps_vs_bits.png
 [Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
