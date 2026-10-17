@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-17 09:58 -->
+<!-- Last edited: 2026-10-17 10:00 -->
 <a id="readme-top"></a>
 
 [![Forks][forks-shield]][forks-url]
@@ -14,7 +14,7 @@
     Measure how fast Llama 3.1 8B runs on your Mac, and how much quantization changes that speed.
     <br />
     <br />
-    <a href="https://github.com/JacquesAttinger/mlx-inference/issues">Report a problem or ask a question</a>
+    <a href="https://github.com/JacquesAttinger/llamacpp-inference/issues">Report a problem or ask a question</a>
   </p>
 </div>
 
@@ -109,8 +109,8 @@ See [`results/Experiments/quantization_perplexity/experiment.md`](results/Experi
 
 1. Clone the repo.
    ```sh
-   git clone https://github.com/JacquesAttinger/mlx-inference.git
-   cd mlx-inference
+   git clone https://github.com/JacquesAttinger/llamacpp-inference.git
+   cd llamacpp-inference
    ```
 2. Install the Python packages.
    ```sh
@@ -247,7 +247,7 @@ The model files are not part of this repo, and Meta's Llama license applies to t
 
 Jacques Attinger - [@JacquesAttinger](https://github.com/JacquesAttinger)
 
-Project Link: [https://github.com/JacquesAttinger/mlx-inference](https://github.com/JacquesAttinger/mlx-inference)
+Project Link: [https://github.com/JacquesAttinger/llamacpp-inference](https://github.com/JacquesAttinger/llamacpp-inference)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -260,14 +260,14 @@ Project Link: [https://github.com/JacquesAttinger/mlx-inference](https://github.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[forks-shield]: https://img.shields.io/github/forks/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[forks-url]: https://github.com/JacquesAttinger/mlx-inference/network/members
-[stars-shield]: https://img.shields.io/github/stars/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[stars-url]: https://github.com/JacquesAttinger/mlx-inference/stargazers
-[issues-shield]: https://img.shields.io/github/issues/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[issues-url]: https://github.com/JacquesAttinger/mlx-inference/issues
-[license-shield]: https://img.shields.io/github/license/JacquesAttinger/mlx-inference.svg?style=for-the-badge
-[license-url]: https://github.com/JacquesAttinger/mlx-inference/blob/main/LICENSE
+[forks-shield]: https://img.shields.io/github/forks/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[forks-url]: https://github.com/JacquesAttinger/llamacpp-inference/network/members
+[stars-shield]: https://img.shields.io/github/stars/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[stars-url]: https://github.com/JacquesAttinger/llamacpp-inference/stargazers
+[issues-shield]: https://img.shields.io/github/issues/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[issues-url]: https://github.com/JacquesAttinger/llamacpp-inference/issues
+[license-shield]: https://img.shields.io/github/license/JacquesAttinger/llamacpp-inference.svg?style=for-the-badge
+[license-url]: https://github.com/JacquesAttinger/llamacpp-inference/blob/main/LICENSE
 [product-screenshot]: images/screenshot.png
 [experiment-plot]: results/Experiments/quantization_decode_tps/decode_tps_vs_bits.png
 [Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white

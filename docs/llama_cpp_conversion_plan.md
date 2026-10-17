@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-13 11:25 -->
+<!-- Last edited: 2026-10-17 10:00 -->
 # Plan: convert the benchmark from MLX to llama.cpp
 
 ## TLDR
@@ -159,7 +159,7 @@ I would write the plumbing (steps 1 to 4, 6, and 9) and leave those three for yo
 ## Decisions (answered)
 
 1. Replace MLX completely. The old engine is gone from the code. No `backend` field is needed in `BenchRecord`.
-2. Rename the package to `llamacppbench`. The Git repo folder and the GitHub repo name are still `mlx-inference`. Rename those by hand when you are ready.
+2. Rename the package to `llamacppbench`. The Git repo and the GitHub repo are now named `llamacpp-inference`.
 3. Quant types: `Q8_0` and `Q4_K_M`.
 
 ## What the first build found
