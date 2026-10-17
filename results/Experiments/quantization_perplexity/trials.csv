@@ -1,0 +1,4 @@
+bits,trial,phase,chunks,scored_tokens,mean_nll,perplexity,wall_s
+16,1,measured,564,143820,1.990758,7.3211,512.5
+8,1,measured,564,143820,1.99131,7.3251,492.5
+4,1,measured,564,143820,2.018399,7.5263,570.5
