@@ -1,4 +1,4 @@
-<!-- Last edited: 2026-10-16 08:38 -->
+<!-- Last edited: 2026-10-17 09:57 -->
 <a id="readme-top"></a>
 
 [![Forks][forks-shield]][forks-url]
@@ -43,10 +43,11 @@
 
 ## About The Project
 
-![Decode speed against bits per weight][experiment-plot]
+![A run of scripts/run.py in the terminal][product-screenshot]
 
 llamacpp-bench is a small project for learning how to benchmark LLM inference on Apple silicon.
 It is built from scratch on [llama.cpp](https://github.com/ggml-org/llama.cpp), through the [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) package.
+The screenshot above is one run of `scripts/run.py`: the prompt, the model's reply, and the timings.
 
 Quantization means storing each model weight with fewer bits, so the model file gets smaller.
 The first experiment asks one question: how much faster does the model write text when the file is smaller?
@@ -57,6 +58,8 @@ Same prompt, same settings, on an Apple silicon Mac with 24 GB of memory:
 | 16-bit | 16.1 GB | 8.6 tokens/s | 1.0x |
 | 8-bit (`Q8_0`) | 8.5 GB | 16.0 tokens/s | 1.9x |
 | 4-bit (`Q4_K_M`) | 4.9 GB | 26.9 tokens/s | 3.1x |
+
+![Decode speed against bits per weight][experiment-plot]
 
 A token is a small piece of text, often a short word or part of a word.
 Decode speed is how many tokens the model writes per second after it has read the prompt.
@@ -242,6 +245,7 @@ Project Link: [https://github.com/JacquesAttinger/mlx-inference](https://github.
 [issues-url]: https://github.com/JacquesAttinger/mlx-inference/issues
 [license-shield]: https://img.shields.io/github/license/JacquesAttinger/mlx-inference.svg?style=for-the-badge
 [license-url]: https://github.com/JacquesAttinger/mlx-inference/blob/main/LICENSE
+[product-screenshot]: images/screenshot.png
 [experiment-plot]: results/Experiments/quantization_decode_tps/decode_tps_vs_bits.png
 [Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
 [Python-url]: https://www.python.org/
