@@ -2,7 +2,7 @@
 name: new-experiment
 description: Set up, run and write up a reproducible benchmark experiment in results/Experiments/. Use when the user describes an experiment to run on the local llama.cpp models (for example "measure how quantization changes decode speed", "compare prefill time across prompt lengths"). First asks the user about anything the description leaves open, then builds the experiment folder (md description, run script, CSV data, optional plot), runs it, and reports the results.
 ---
-<!-- Last edited: 2026-10-16 08:30 -->
+<!-- Last edited: 2026-10-18 09:00 -->
 
 # New experiment
 
@@ -38,6 +38,7 @@ Check each item on this list:
 - **What changes and what stays fixed.** The variable (bits, prompt length, token cap, ...) and its values.
   Everything else must stay the same across the groups.
 - **Models.** Which entries of `MODELS`?
+  Default: the 8-bit model (`DEFAULT_BITS` in `run.py`), unless the experiment is about the model itself (for example quantization).
   If the user names a model file that has no entry in `MODELS`, ask for its bit label and add it there.
 - **Prompt.** The default `PROMPT`, a different text, or an exact token count (`make_prompt`)?
 - **Trials.** How many trials per group, and how many are warm-up that get dropped?
