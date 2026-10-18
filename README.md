@@ -87,6 +87,13 @@ Decode speed stayed near 24 tokens per second at every length.
 Each length has 3 trials, so small differences are noise.
 See [`results/Experiments/prompt_length_prefill_decode/experiment.md`](results/Experiments/prompt_length_prefill_decode/experiment.md) for the method and limits.
 
+The fourth experiment batches prompts.
+It runs the 8-bit model on 1, 3, 5 and 7 copies of one prompt at the same time, and times prefill and decode for the whole batch.
+Throughput rose from 15.5 to 63.6 tokens per second (4.1x), but it stopped rising between 5 and 7 prompts.
+Decode speed per prompt fell from 15.7 to 9.3 tokens per second.
+Each batch size has 3 trials, so small differences are noise.
+See [`results/Experiments/batching_throughput/experiment.md`](results/Experiments/batching_throughput/experiment.md) for the method and limits.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
@@ -230,6 +237,13 @@ The prompt length experiment loads only the 4-bit model and takes a few minutes:
 
 ```sh
 uv run python results/Experiments/prompt_length_prefill_decode/run_experiment.py
+```
+
+The batching experiment loads the 8-bit model and takes a few minutes.
+It uses `batched_generate.py` in its own folder, because `scripts/run.py` handles one prompt at a time:
+
+```sh
+uv run python results/Experiments/batching_throughput/run_experiment.py
 ```
 
 ### Project layout

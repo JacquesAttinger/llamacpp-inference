@@ -1,0 +1,5 @@
+n_prompts,trials,mean_throughput_tps,std_throughput_tps,mean_prefill_tps,std_prefill_tps,mean_decode_tps_total,std_decode_tps_total,mean_decode_tps_per_stream,std_decode_tps_per_stream
+1,3,15.46,0.07,182.1,5.42,15.68,0.08,15.68,0.08
+3,3,41.1,0.32,494.97,0.84,41.66,0.33,13.89,0.11
+5,3,62.7,1.64,412.28,12.37,64.84,1.79,12.97,0.35
+7,3,63.58,2.87,522.71,11.33,65.17,3.02,9.31,0.43
