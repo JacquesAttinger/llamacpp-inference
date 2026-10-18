@@ -1,4 +1,4 @@
-# Last edited: 2026-10-18 09:50
+# Last edited: 2026-10-18 11:10
 """Measure how batching (1, 3, 5 or 7 prompts at once) changes throughput, prefill speed and decode speed.
 
 Loads the 8-bit Llama 3.1 8B once. For each batch size it runs 1 warm-up trial (dropped) and 3 measured
@@ -109,7 +109,9 @@ def summarize(trial_rows: list[dict]) -> list[dict]:
     return summary
 
 
-def draw_line(ax, trial_rows: list[dict], summary: list[dict], metric: str, color: str, label: str) -> None:
+def draw_line(
+    ax, trial_rows: list[dict], summary: list[dict], metric: str, color: str, label: str, skip_first=False
+) -> None:
     """One metric's mean (with std error bars and labels) and its trials as grey dots."""
     means = [float(s[f"mean_{metric}"]) for s in summary]
     stds = [float(s[f"std_{metric}"]) for s in summary]
@@ -117,22 +119,19 @@ def draw_line(ax, trial_rows: list[dict], summary: list[dict], metric: str, colo
         values = measured(trial_rows, n, metric)
         ax.scatter([n] * len(values), values, color="0.6", s=14, zorder=2)
     ax.errorbar(BATCH_SIZES, means, yerr=stds, marker="o", color=color, capsize=4, zorder=3, label=label)
-    for n, m in zip(BATCH_SIZES, means, strict=True):
-        ax.annotate(
-            f"{m:.1f}",
-            (n, m),
-            textcoords="offset points",
-            xytext=(0, 16),
-            ha="center",
-            fontsize=8,
-            bbox={"boxstyle": "round,pad=0.15", "fc": "white", "ec": "none", "alpha": 0.85},
-            zorder=4,
-        )
+    for i, (n, m) in enumerate(zip(BATCH_SIZES, means, strict=True)):
+        if skip_first and i == 0:
+            continue  # same point as another line's first label
+        rising = i + 1 < len(means) and means[i + 1] > m
+        # A line that rises out of the point would cross a label above it, so the label goes below it.
+        offset, align = ((6, -16), "left") if rising else ((0, 16), "center")
+        ax.annotate(f"{m:.1f}", (n, m), textcoords="offset points", xytext=offset, ha=align, fontsize=10)
 
 
 def plot(trial_rows: list[dict], summary: list[dict]) -> None:
     """Three panels: throughput, prefill speed, and decode speed (whole batch and per prompt)."""
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.4))
+    plt.rcParams.update({"font.size": 12})  # the plot is printed small in the book, so keep text large
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4.4))
     panels = [
         (axes[0], "Throughput", [("throughput_tps", "tab:blue", None)]),
         (axes[1], "Prefill speed", [("prefill_tps", "tab:green", None)]),
@@ -146,16 +145,17 @@ def plot(trial_rows: list[dict], summary: list[dict]) -> None:
         ),
     ]
     for ax, title, lines in panels:
-        for metric, color, label in lines:
-            draw_line(ax, trial_rows, summary, metric, color, label)
+        for k, (metric, color, label) in enumerate(lines):
+            draw_line(ax, trial_rows, summary, metric, color, label, skip_first=k > 0)
         top = max(float(s[f"mean_{lines[0][0]}"]) for s in summary)
         ax.set_ylim(0, top * 1.2)
         ax.set_xticks(BATCH_SIZES)
+        ax.margins(x=0.12)  # room so the labels at 1 and 7 stay inside the axes
         ax.set_xlabel("Prompts in the batch")
         ax.set_ylabel("Tokens per second")
         ax.set_title(title)
         ax.grid(axis="y", alpha=0.3)
-    axes[2].legend(loc="center right")
+    axes[2].legend(loc="upper left")
     fig.suptitle("Llama 3.1 8B (8-bit): effect of batching")
     fig.tight_layout()
     fig.savefig(PLOT_PATH, dpi=150)
